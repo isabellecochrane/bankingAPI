@@ -124,17 +124,17 @@ app.put('/accounts/:id/withdraw', (req, res) => {
 
 
 //balance transfer
-app.put('/accounts/:id', (req, res) => {
+app.put('/accounts/:id/transfer', (req, res) => {
     const transferAmount = req.body.amount
-    const idToReceiveAmount = ObjectId(req.params.id)
-    const nameToSendAmount = req.body.name
+    const idToSendAmount = ObjectId(req.params.id)
+    const idToReceiveAmount = ObjectId(req.body.id)
 
     connectToDb(async (db) => {
         const collection = db.collection('accounts')
-        const result = await collection.updateOne({_id: idToReceiveAmount}, {$inc: {balance: -transferAmount}})
+        const result = await collection.updateOne({_id: idToSendAmount}, {$inc: {balance: -transferAmount}})
 
          if (result.modifiedCount === 1 ) {
-             const secondResult = await collection.updateOne({name: nameToSendAmount}, {$inc: {balance: transferAmount}})
+             const secondResult = await collection.updateOne({_id: idToReceiveAmount}, {$inc: {balance: transferAmount}})
              if (secondResult.modifiedCount === 1 ) {
                  res.send('done')
              } else {
@@ -144,30 +144,19 @@ app.put('/accounts/:id', (req, res) => {
     })
 })
 
+//deleting an account
+app.delete('/accounts/:id/remove', (req, res) => {
+    const accountToRemove = ObjectId(req.params.id)
+    connectToDb(async (db) => {
+        const collection = db.collection('accounts')
+        const result = await collection.deleteOne({_id: accountToRemove})
 
-// app.put("/accounts/:id/withdraw", (req, res) => {
-//     const idToFind = ObjectId(req.params.id);
-//     const withdraw = req.body.withdraw;
-//
-//     connectToDb(async (db) => {
-//         const collection = db.collection("accounts");
-//         const result = await collection.updateOne(
-//             { _id: idToFind },
-//             { $inc: { balance: round(-withdraw, 2) } }
-//         );
-//         if (result.modifiedCount === 1) {
-//             return res.send("done");
-//         } else {
-//             return res.send("fail");
-//         }
-//     });
-// });
-//
-// let withdrawFromAccount = async (db, req) => {
-//     const collection = db.collection('accounts')
-//     const data = await collection.updateOne({_id: ObjectId(req.body.id)}, {$inc: {balance: -req.body.amount}})
-//     return data.modifiedCount
-// }
-
+        if (result.deletedCount === 1 ) {
+            res.send('done')
+        } else {
+            res.send('fail')
+        }
+    })
+})
 
 app.listen(PORT)
