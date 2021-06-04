@@ -123,6 +123,28 @@ app.put('/accounts/:id/withdraw', (req, res) => {
 })
 
 
+//balance transfer
+app.put('/accounts/:id', (req, res) => {
+    const transferAmount = req.body.amount
+    const idToReceiveAmount = ObjectId(req.params.id)
+    const nameToSendAmount = req.body.name
+
+    connectToDb(async (db) => {
+        const collection = db.collection('accounts')
+        const result = await collection.updateOne({_id: idToReceiveAmount}, {$inc: {balance: -transferAmount}})
+
+         if (result.modifiedCount === 1 ) {
+             const secondResult = await collection.updateOne({name: nameToSendAmount}, {$inc: {balance: transferAmount}})
+             if (secondResult.modifiedCount === 1 ) {
+                 res.send('done')
+             } else {
+                 res.send('fail')
+             }
+         }
+    })
+})
+
+
 // app.put("/accounts/:id/withdraw", (req, res) => {
 //     const idToFind = ObjectId(req.params.id);
 //     const withdraw = req.body.withdraw;
